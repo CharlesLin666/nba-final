@@ -12,14 +12,71 @@ GMAIL_TO = os.environ.get("GMAIL_TO", GMAIL_USER)
 STAKE_TWD = int(os.environ.get("STAKE_TWD", "1000"))
 SENT_ALERTS_FILE = "sent_alerts.json"
 MANUAL_ODDS_FILE = "manual_odds.json"
-POLYMARKET_SLUGS = ["nba"]
+POLYMARKET_SLUGS = ["nba", "mlb", "tennis"]
 POLYMARKET_BASE = "https://gamma-api.polymarket.com/events?active=true&closed=false&order=startTime&ascending=true&limit=100&tag_slug={slug}"
 
 COOLDOWN_HOURS = 2
-MIN_PROB = 0.80
-MIN_EDGE = 0.06
-MIN_VOLUME = 100000
-MAX_HOURS_TO_START = 6
+
+# 測試模式：門檻降低，測試完畢後改回正式門檻
+TEST_MODE = os.environ.get("TEST_MODE", "true").lower() == "true"
+if TEST_MODE:
+    MIN_PROB   = 0.50   # 正式: 0.80
+    MIN_EDGE   = 0.00   # 正式: 0.06
+    MIN_VOLUME = 1000   # 正式: 100000
+    MAX_HOURS_TO_START = 72  # 正式: 6
+else:
+    MIN_PROB   = 0.80
+    MIN_EDGE   = 0.06
+    MIN_VOLUME = 100000
+    MAX_HOURS_TO_START = 6
+
+# NBA 球隊名稱對照表（Polymarket 短名 → 正規化）
+TEAM_ALIASES = {
+    # NBA
+    "hawks": "hawks", "atlanta": "hawks",
+    "celtics": "celtics", "boston": "celtics",
+    "nets": "nets", "brooklyn": "nets",
+    "hornets": "hornets", "charlotte": "hornets",
+    "bulls": "bulls", "chicago": "bulls",
+    "cavaliers": "cavaliers", "cavs": "cavaliers", "cleveland": "cavaliers",
+    "mavericks": "mavericks", "mavs": "mavericks", "dallas": "mavericks",
+    "nuggets": "nuggets", "denver": "nuggets",
+    "pistons": "pistons", "detroit": "pistons",
+    "warriors": "warriors", "golden state": "warriors",
+    "rockets": "rockets", "houston": "rockets",
+    "pacers": "pacers", "indiana": "pacers",
+    "clippers": "clippers", "la clippers": "clippers",
+    "lakers": "lakers", "los angeles lakers": "lakers", "la lakers": "lakers",
+    "grizzlies": "grizzlies", "memphis": "grizzlies",
+    "heat": "heat", "miami": "heat",
+    "bucks": "bucks", "milwaukee": "bucks",
+    "timberwolves": "timberwolves", "wolves": "timberwolves", "minnesota": "timberwolves",
+    "pelicans": "pelicans", "new orleans": "pelicans",
+    "knicks": "knicks", "new york": "knicks",
+    "thunder": "thunder", "okc": "thunder", "oklahoma": "thunder",
+    "magic": "magic", "orlando": "magic",
+    "76ers": "76ers", "sixers": "76ers", "philadelphia": "76ers",
+    "suns": "suns", "phoenix": "suns",
+    "trail blazers": "trail blazers", "blazers": "trail blazers", "portland": "trail blazers",
+    "kings": "kings", "sacramento": "kings",
+    "spurs": "spurs", "san antonio": "spurs",
+    "raptors": "raptors", "toronto": "raptors",
+    "jazz": "jazz", "utah": "jazz",
+    "wizards": "wizards", "washington": "wizards",
+    # MLB
+    "yankees": "yankees", "new york yankees": "yankees",
+    "red sox": "red sox", "boston red sox": "red sox",
+    "dodgers": "dodgers", "los angeles dodgers": "dodgers",
+    "cubs": "cubs", "chicago cubs": "cubs",
+    "astros": "astros", "houston astros": "astros",
+    "braves": "braves", "atlanta braves": "braves",
+    "mets": "mets", "new york mets": "mets",
+    "cardinals": "cardinals", "st. louis": "cardinals",
+    "giants": "giants", "san francisco giants": "giants",
+    "phillies": "phillies", "philadelphia phillies": "phillies",
+    "rays": "rays", "tampa bay": "rays",
+    "blue jays": "blue jays", "toronto blue jays": "blue jays",
+}
 
 
 def load_json(path, default):
@@ -83,17 +140,29 @@ def parse_team_name(title):
     return None, None
 
 
+def normalize_name(name):
+    """Normalize team/player name using alias table, fallback to lowercase."""
+    n = name.lower().strip()
+    # Try direct lookup
+    if n in TEAM_ALIASES:
+        return TEAM_ALIASES[n]
+    # Try partial match
+    for alias, canonical in TEAM_ALIASES.items():
+        if alias in n or n in alias:
+            return canonical
+    return n
+
+
 def match_manual_odds(home, away, manual_odds):
-    """Find matching entry in manual_odds.json (case-insensitive partial match)."""
-    home_l = home.lower()
-    away_l = away.lower()
+    """Find matching entry in manual_odds.json using normalized names."""
+    home_n = normalize_name(home)
+    away_n = normalize_name(away)
     for entry in manual_odds:
-        mh = entry.get("home", "").lower()
-        ma = entry.get("away", "").lower()
-        if (home_l in mh or mh in home_l) and (away_l in ma or ma in away_l):
+        mh = normalize_name(entry.get("home", ""))
+        ma = normalize_name(entry.get("away", ""))
+        if home_n == mh and away_n == ma:
             return entry
-        if (away_l in mh or mh in away_l) and (home_l in ma or ma in home_l):
-            # Swapped
+        if home_n == ma and away_n == mh:
             return {"home": entry["away"], "away": entry["home"],
                     "home_odds": entry["away_odds"], "away_odds": entry["home_odds"]}
     return None

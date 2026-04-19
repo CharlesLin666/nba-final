@@ -1,6 +1,10 @@
 [
-  {"home": "76ers", "away": "Celtics", "home_odds": 0, "away_odds": 0},
-  {"home": "Suns", "away": "Thunder", "home_odds": 0, "away_odds": 0},
-  {"home": "Magic", "away": "Pistons", "home_odds": 0, "away_odds": 0},
-  {"home": "Trail Blazers", "away": "Spurs", "home_odds": 0, "away_odds": 0}
+  {"home": "76ers",        "away": "Celtics",       "home_odds": 2.15, "away_odds": 1.72},
+  {"home": "Suns",         "away": "Thunder",        "home_odds": 2.80, "away_odds": 1.45},
+  {"home": "Magic",        "away": "Pistons",        "home_odds": 1.75, "away_odds": 2.10},
+  {"home": "Trail Blazers","away": "Spurs",          "home_odds": 2.20, "away_odds": 1.68},
+  {"home": "Hawks",        "away": "Knicks",         "home_odds": 2.50, "away_odds": 1.55},
+  {"home": "Rockets",      "away": "Lakers",         "home_odds": 1.85, "away_odds": 2.00},
+  {"home": "Timberwolves", "away": "Nuggets",        "home_odds": 1.70, "away_odds": 2.15},
+  {"home": "Cavaliers",    "away": "Raptors",        "home_odds": 1.40, "away_odds": 2.90}
 ]

@@ -34,4 +34,5 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           GMAIL_TO: ${{ secrets.GMAIL_TO }}
           STAKE_TWD: ${{ secrets.STAKE_TWD }}
+          TEST_MODE: "true"
         run: python arbitrage_alert.py
