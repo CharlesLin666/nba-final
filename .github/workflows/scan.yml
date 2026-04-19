@@ -29,6 +29,8 @@ jobs:
 
       - name: Run arbitrage scanner
         env:
-          LINE_TOKEN: ${{ secrets.LINE_TOKEN }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GMAIL_TO: ${{ secrets.GMAIL_TO }}
           STAKE_TWD: ${{ secrets.STAKE_TWD }}
         run: python arbitrage_alert.py

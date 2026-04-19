@@ -1,9 +1,14 @@
 import os
 import json
+import smtplib
 import requests
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timezone, timedelta
 
-LINE_TOKEN = os.environ.get("LINE_TOKEN", "")
+GMAIL_USER = os.environ.get("GMAIL_USER", "")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+GMAIL_TO = os.environ.get("GMAIL_TO", GMAIL_USER)
 STAKE_TWD = int(os.environ.get("STAKE_TWD", "1000"))
 SENT_ALERTS_FILE = "sent_alerts.json"
 MANUAL_ODDS_FILE = "manual_odds.json"
@@ -28,17 +33,22 @@ def save_json(path, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def send_line_notify(message):
-    if not LINE_TOKEN:
-        print("[LINE] LINE_TOKEN not set, skipping notification.")
+def send_gmail(message):
+    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
+        print("[Gmail] GMAIL_USER or GMAIL_APP_PASSWORD not set, skipping notification.")
         return
-    url = "https://notify-api.line.me/api/notify"
-    headers = {"Authorization": f"Bearer {LINE_TOKEN}"}
-    resp = requests.post(url, headers=headers, data={"message": message}, timeout=10)
-    if resp.status_code == 200:
-        print("[LINE] Notification sent.")
-    else:
-        print(f"[LINE] Failed: {resp.status_code} {resp.text}")
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "🏀 NBA套利警報"
+        msg["From"] = GMAIL_USER
+        msg["To"] = GMAIL_TO
+        msg.attach(MIMEText(message, "plain", "utf-8"))
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.sendmail(GMAIL_USER, GMAIL_TO, msg.as_string())
+        print(f"[Gmail] Notification sent to {GMAIL_TO}.")
+    except Exception as e:
+        print(f"[Gmail] Failed: {e}")
 
 
 def fetch_polymarket_events():
@@ -196,7 +206,7 @@ def main():
                 f"投注金額：{STAKE_TWD} TWD（預估獲利 {win_amount:.0f} TWD）"
             )
             print(f"  *** ALERT TRIGGERED ***\n{msg}\n")
-            send_line_notify(msg)
+            send_gmail(msg)
             sent_alerts[alert_key] = now_utc.isoformat()
             alerts_triggered += 1
         else:
