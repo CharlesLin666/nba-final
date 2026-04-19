@@ -1,1 +1,8 @@
-[{"home": "OKC Thunder", "away": "Denver Nuggets", "home_odds": 1.65, "away_odds": 2.20}]
+[
+  {"sport": "NBA", "home": "OKC Thunder", "away": "Denver Nuggets", "home_odds": 1.65, "away_odds": 2.20},
+  {"sport": "NBA", "home": "Boston Celtics", "away": "New York Knicks", "home_odds": 1.80, "away_odds": 2.00},
+  {"sport": "MLB", "home": "Los Angeles Dodgers", "away": "New York Yankees", "home_odds": 1.75, "away_odds": 2.10},
+  {"sport": "MLB", "home": "Houston Astros", "away": "Atlanta Braves", "home_odds": 1.90, "away_odds": 1.95},
+  {"sport": "Tennis", "home": "Novak Djokovic", "away": "Carlos Alcaraz", "home_odds": 2.10, "away_odds": 1.75},
+  {"sport": "Tennis", "home": "Jannik Sinner", "away": "Daniil Medvedev", "home_odds": 1.60, "away_odds": 2.30}
+]

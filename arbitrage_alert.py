@@ -12,7 +12,8 @@ GMAIL_TO = os.environ.get("GMAIL_TO", GMAIL_USER)
 STAKE_TWD = int(os.environ.get("STAKE_TWD", "1000"))
 SENT_ALERTS_FILE = "sent_alerts.json"
 MANUAL_ODDS_FILE = "manual_odds.json"
-POLYMARKET_API = "https://gamma-api.polymarket.com/events?tag_id=100639&active=true&closed=false&order=startTime&ascending=true&limit=50"
+POLYMARKET_SLUGS = ["nba", "tennis", "mlb"]
+POLYMARKET_BASE = "https://gamma-api.polymarket.com/events?active=true&closed=false&order=startTime&ascending=true&limit=100&tag_slug={slug}"
 
 COOLDOWN_HOURS = 2
 MIN_PROB = 0.80
@@ -52,21 +53,33 @@ def send_gmail(message):
 
 
 def fetch_polymarket_events():
-    try:
-        resp = requests.get(POLYMARKET_API, timeout=15)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:
-        print(f"[Polymarket] Fetch error: {e}")
-        return []
+    all_events = []
+    for slug in POLYMARKET_SLUGS:
+        url = POLYMARKET_BASE.format(slug=slug)
+        try:
+            resp = requests.get(url, timeout=15)
+            resp.raise_for_status()
+            events = resp.json()
+            print(f"[Polymarket] {slug.upper()}: {len(events)} events fetched")
+            all_events.extend(events)
+        except Exception as e:
+            print(f"[Polymarket] Fetch error ({slug}): {e}")
+    return all_events
 
 
 def parse_team_name(title):
     """Try to extract home/away teams from market title like 'Team A vs Team B'."""
-    for sep in [" vs ", " VS ", " v ", " V "]:
-        if sep in title:
-            parts = title.split(sep, 1)
-            return parts[0].strip(), parts[1].strip()
+    import re
+    # Strip leading context like "NBA Playoffs: Who Will Win Series? - "
+    clean = re.sub(r'^.*[-–]\s*', '', title).strip()
+    for sep in [" vs. ", " vs ", " VS ", " v. ", " v ", " V "]:
+        if sep in clean:
+            parts = clean.split(sep, 1)
+            # Remove trailing junk like " '" or extra spaces
+            home = re.sub(r"\s*[''']?\s*$", "", parts[0]).strip()
+            away = re.sub(r"\s*[''']?\s*$", "", parts[1]).strip()
+            if home and away:
+                return home, away
     return None, None
 
 
