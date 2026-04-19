@@ -11,11 +11,12 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Cache sent_alerts.json
         uses: actions/cache@v4
         with:
