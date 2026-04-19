@@ -12,7 +12,7 @@ GMAIL_TO = os.environ.get("GMAIL_TO", GMAIL_USER)
 STAKE_TWD = int(os.environ.get("STAKE_TWD", "1000"))
 SENT_ALERTS_FILE = "sent_alerts.json"
 MANUAL_ODDS_FILE = "manual_odds.json"
-POLYMARKET_SLUGS = ["nba", "tennis", "mlb"]
+POLYMARKET_SLUGS = ["nba"]
 POLYMARKET_BASE = "https://gamma-api.polymarket.com/events?active=true&closed=false&order=startTime&ascending=true&limit=100&tag_slug={slug}"
 
 COOLDOWN_HOURS = 2
