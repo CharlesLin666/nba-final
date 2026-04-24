@@ -308,18 +308,28 @@ def compute_edge(market_result, manual):
     """
     Compute arbitrage edge for both home and away sides.
 
-    home_edge = Polymarket_home_prob - (1 / home_lottery_odds)
-    away_edge = Polymarket_away_prob - (1 / away_lottery_odds)
+    台彩賠率先換算成隱含機率，再除以總和去除莊家抽水（vig），
+    得到「公平機率」後才與 Polymarket 比較。
 
-    Both are computed independently. The side with the larger edge is the
-    recommended bet. A positive edge means Polymarket believes the team
-    is more likely to win than the lottery odds imply.
+    例：主隊 1.72、客隊 2.15
+      原始隱含：58.1% + 46.5% = 104.6%（抽水 4.6%）
+      去除抽水：55.5% + 44.5% = 100.0%（公平機率）
+
+    home_edge = Polymarket主隊機率 - 台彩主隊公平機率
+    away_edge = Polymarket客隊機率 - 台彩客隊公平機率
     """
     home_poly = market_result["home_prob"]
     away_poly = market_result["away_prob"]
 
-    home_lottery = 1.0 / manual["home_odds"]
-    away_lottery = 1.0 / manual["away_odds"]
+    # 原始隱含機率（含莊家抽水）
+    home_raw = 1.0 / manual["home_odds"]
+    away_raw = 1.0 / manual["away_odds"]
+    total_implied = home_raw + away_raw   # 通常 > 1.0，例如 1.046
+
+    # 去除抽水後的公平機率
+    home_lottery = home_raw / total_implied
+    away_lottery = away_raw / total_implied
+    vig = (total_implied - 1.0) * 100     # 抽水百分比，例如 4.6%
 
     home_edge = home_poly - home_lottery
     away_edge = away_poly - away_lottery
@@ -336,6 +346,7 @@ def compute_edge(market_result, manual):
         "away_poly_prob":    away_poly,
         "home_lottery_prob": home_lottery,
         "away_lottery_prob": away_lottery,
+        "vig_pct":           vig,
         "home_edge":         home_edge,
         "away_edge":         away_edge,
         "best_edge":         best_edge,
@@ -372,7 +383,7 @@ def format_alert(title, start_time, hours_left, edge_result, manual, market_resu
         f"主隊 {manual['home']}：{edge_result['home_poly_prob']*100:.1f}%\n"
         f"客隊 {manual['away']}：{edge_result['away_poly_prob']*100:.1f}%\n"
         f"\n"
-        f"── 台彩隱含機率 ──\n"
+        f"── 台彩公平機率（已去除 {edge_result['vig_pct']:.1f}% 抽水）──\n"
         f"主隊 {manual['home']}：{edge_result['home_lottery_prob']*100:.1f}%  (賠率 {manual['home_odds']})\n"
         f"客隊 {manual['away']}：{edge_result['away_lottery_prob']*100:.1f}%  (賠率 {manual['away_odds']})\n"
         f"\n"
@@ -454,7 +465,8 @@ def main():
         edge_result = compute_edge(market_result, manual)
 
         print(f"  Lottery : home {manual['home_odds']} ({edge_result['home_lottery_prob']*100:.1f}%) "
-              f"/ away {manual['away_odds']} ({edge_result['away_lottery_prob']*100:.1f}%)")
+              f"/ away {manual['away_odds']} ({edge_result['away_lottery_prob']*100:.1f}%)  "
+              f"[抽水 {edge_result['vig_pct']:.1f}%]")
         print(f"  Edge    : home {edge_result['home_edge']*100:+.1f}%  away {edge_result['away_edge']*100:+.1f}%")
 
         best_prob    = max(market_result["home_prob"], market_result["away_prob"])
